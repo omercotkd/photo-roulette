@@ -80,6 +80,9 @@ export interface RoomState {
   current_media_type?: MediaType;
   round_elapsed_ms?: number;
   my_vote?: string | null;
+  my_selected_photos?: UploadedPhoto[];
+  my_uploaded_photos?: UploadedPhoto[];
+  has_swap_pool?: boolean;
 }
 
 export interface PhotoSwappedData {

@@ -138,6 +138,9 @@ function reducer(state: GameState, action: Action): GameState {
         isHost: me?.is_host ?? state.isHost,
         totalPlayers: p.players.length,
         myVote: p.my_vote ?? null,
+        mySelectedPhotos: p.my_selected_photos ?? state.mySelectedPhotos,
+        myUploadedPhotos: p.my_uploaded_photos ?? state.myUploadedPhotos,
+        hasSwapPool: p.has_swap_pool ?? state.hasSwapPool,
         currentRound:
           p.status === 'IN_ROUND' && p.current_media_url
             ? {

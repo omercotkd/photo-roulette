@@ -72,6 +72,15 @@ def _build_room_state(game: Game, player_id: str | None = None) -> dict:
     if player_id and player_id in game.players:
         player = game.players[player_id]
         state["my_vote"] = player.current_round_vote
+        state["my_selected_photos"] = [
+            {"photo_id": p.photo_id, "filename": p.filename, "media_type": p.media_type, "url": p.url}
+            for p in player.selected_photos
+        ]
+        state["my_uploaded_photos"] = [
+            {"photo_id": p.photo_id, "filename": p.filename, "media_type": p.media_type, "url": p.url}
+            for p in player.uploaded_photos
+        ]
+        state["has_swap_pool"] = len(player.uploaded_photos) > len(player.selected_photos)
     return state
 
 

@@ -248,6 +248,53 @@ async def start_game(code: str, token: str = Depends(_get_token)):
     return {"status": "started"}
 
 
+@router.delete("/games/{code}/photos/{photo_id}")
+async def delete_photo(code: str, photo_id: str, token: str = Depends(_get_token)):
+    game = _get_game(code)
+    player = _get_player_by_token(game, token)
+
+    if game.status != GameStatus.LOBBY:
+        raise HTTPException(400, "Cannot delete photos after game has started.")
+
+    # Find the photo in uploaded list
+    photo = next((p for p in player.uploaded_photos if p.photo_id == photo_id), None)
+    if not photo:
+        raise HTTPException(404, "Photo not found.")
+
+    # Remove from both lists
+    player.uploaded_photos = [p for p in player.uploaded_photos if p.photo_id != photo_id]
+    player.selected_photos = [p for p in player.selected_photos if p.photo_id != photo_id]
+
+    # Delete file from disk
+    player_upload_dir = UPLOAD_ROOT / code / player.player_id
+    file_path = player_upload_dir / photo.filename
+    try:
+        file_path.unlink(missing_ok=True)
+    except OSError:
+        pass  # Ignore filesystem errors — state is already updated
+
+    game.update_activity()
+
+    await sio.emit(
+        "photo_selected",
+        {"player_id": player.player_id, "count": len(player.selected_photos)},
+        room=code,
+    )
+
+    return {
+        "selected_photos": [
+            UploadedPhotoResponse(
+                photo_id=p.photo_id,
+                filename=p.filename,
+                media_type=p.media_type,
+                url=p.url,
+            )
+            for p in player.selected_photos
+        ],
+        "has_swap_pool": len(player.uploaded_photos) > len(player.selected_photos),
+    }
+
+
 @router.post("/games/{code}/play-again")
 async def play_again(code: str, token: str = Depends(_get_token)):
     game = _get_game(code)

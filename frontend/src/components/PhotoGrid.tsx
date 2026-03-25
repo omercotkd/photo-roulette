@@ -3,12 +3,11 @@ import type { UploadedPhoto } from '../types/game';
 
 interface PhotoGridProps {
   selectedPhotos: UploadedPhoto[];
-  hasSwapPool: boolean;
-  onSwap: (photoId: string) => void;
+  onDelete: (photoId: string) => void;
   uploading: boolean;
 }
 
-export default function PhotoGrid({ selectedPhotos, hasSwapPool, onSwap, uploading }: PhotoGridProps) {
+export default function PhotoGrid({ selectedPhotos, onDelete, uploading }: PhotoGridProps) {
   const slots = Array.from({ length: 16 });
 
   return (
@@ -37,8 +36,7 @@ export default function PhotoGrid({ selectedPhotos, hasSwapPool, onSwap, uploadi
           <PhotoSlot
             key={photo.photo_id}
             photo={photo}
-            canSwap={hasSwapPool}
-            onSwap={() => onSwap(photo.photo_id)}
+            onDelete={() => onDelete(photo.photo_id)}
           />
         );
       })}
@@ -46,7 +44,7 @@ export default function PhotoGrid({ selectedPhotos, hasSwapPool, onSwap, uploadi
   );
 }
 
-function PhotoSlot({ photo, canSwap, onSwap }: { photo: UploadedPhoto; canSwap: boolean; onSwap: () => void }) {
+function PhotoSlot({ photo, onDelete }: { photo: UploadedPhoto; onDelete: () => void }) {
   return (
     <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-700 group">
       {photo.media_type === 'image' ? (
@@ -64,20 +62,18 @@ function PhotoSlot({ photo, canSwap, onSwap }: { photo: UploadedPhoto; canSwap: 
         </div>
       )}
 
-      {canSwap && (
-        <button
-          onClick={onSwap}
-          className={clsx(
-            'absolute top-1 right-1 w-6 h-6 rounded-full bg-red-600 text-white text-xs',
-            'flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity',
-            'hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-400'
-          )}
-          title="Swap this photo"
-          aria-label="Swap photo"
-        >
-          ✕
-        </button>
-      )}
+      <button
+        onClick={onDelete}
+        className={clsx(
+          'absolute top-1 right-1 w-6 h-6 rounded-full bg-red-600 text-white text-xs',
+          'flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity',
+          'hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-400'
+        )}
+        title="Remove this photo"
+        aria-label="Remove photo"
+      >
+        ✕
+      </button>
     </div>
   );
 }

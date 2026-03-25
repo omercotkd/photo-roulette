@@ -54,7 +54,7 @@ export default function LobbyPage() {
   const isReady = state.players.find((p) => p.player_id === state.myPlayerId)?.is_ready ?? false;
   const allReady = state.players.length >= 2 && state.players.every((p) => p.is_ready);
 
-  async function uploadFiles(files: FileList | null) {
+  async function uploadFiles(files: FileList | File[] | null) {
     if (!files || files.length === 0) return;
     setUploadError('');
     setUploading(true);
@@ -99,8 +99,40 @@ export default function LobbyPage() {
     setUploading(false);
   }
 
-  function handleSwap(photoId: string) {
-    socket?.emit('swap_photo', { old_photo_id: photoId });
+  async function handleDelete(photoId: string) {
+    try {
+      const res = await fetch(`${API}/games/${code}/photos/${photoId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${state.myToken}` },
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        setUploadError(d.detail ?? 'Delete failed');
+        return;
+      }
+      const data = await res.json();
+      dispatch({
+        type: 'PHOTOS_UPDATED',
+        selected: data.selected_photos,
+        uploaded: state.myUploadedPhotos.filter((p) => p.photo_id !== photoId),
+        hasSwapPool: data.has_swap_pool,
+      });
+    } catch {
+      setUploadError('Network error during delete');
+    }
+  }
+
+  function handleFolderChange(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    const accepted = state.settings.videos_allowed ? /^(image|video)\// : /^image\//;
+    const filtered = Array.from(files).filter((f) => accepted.test(f.type));
+    // Shuffle and pick at most 16
+    for (let i = filtered.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [filtered[i], filtered[j]] = [filtered[j], filtered[i]];
+    }
+    const sampled = filtered.slice(0, 16);
+    uploadFiles(sampled);
   }
 
   function handleReadyToggle() {
@@ -244,9 +276,9 @@ export default function LobbyPage() {
             {state.mySelectedPhotos.length > 0 && (
               <span className="ml-2 text-gray-400 text-sm font-normal">
                 {state.mySelectedPhotos.length}/16 selected
-                {state.hasSwapPool && ' · tap ✕ to swap'}
-                {!state.hasSwapPool && state.mySelectedPhotos.length === 16 && (
-                  <span className="text-yellow-500"> · upload more to enable swapping</span>
+                {state.mySelectedPhotos.length < 16 && ' · tap ✕ to remove'}
+                {state.mySelectedPhotos.length === 16 && (
+                  <span className="text-yellow-500"> · tap ✕ to remove</span>
                 )}
               </span>
             )}
@@ -260,8 +292,7 @@ export default function LobbyPage() {
 
           <PhotoGrid
             selectedPhotos={state.mySelectedPhotos}
-            hasSwapPool={state.hasSwapPool}
-            onSwap={handleSwap}
+            onDelete={handleDelete}
             uploading={uploading}
           />
 
@@ -300,7 +331,7 @@ export default function LobbyPage() {
             multiple
             accept={state.settings.videos_allowed ? 'image/*,video/*' : 'image/*'}
             className="hidden"
-            onChange={(e) => uploadFiles(e.target.files)}
+            onChange={(e) => handleFolderChange(e.target.files)}
           />
         </section>
 
