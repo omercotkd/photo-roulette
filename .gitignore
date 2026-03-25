@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.pyc
+
+# Players upload folder
+uploads/
