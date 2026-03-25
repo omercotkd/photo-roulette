@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from game_state import Game, GameSettings, GameStatus, Player, UploadedPhoto
-from backend.models import (
+from models import (
     CreateGameRequest,
     JoinGameRequest,
     UpdateSettingsRequest,
