@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 *, *::before, *::after {
@@ -7,8 +8,16 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background-color: #111827;
-  color: #f9fafb;
-  font-family: system-ui, -apple-system, sans-serif;
+  color: #ffffff;
+  font-family: 'Nunito', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Fixed crimson radial gradient background — works on all browsers incl. iOS Safari */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 20%, #c42035 0%, #7b1020 45%, #3a060e 100%);
+  z-index: -1;
 }

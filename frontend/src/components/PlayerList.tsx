@@ -1,4 +1,4 @@
-import clsx from 'clsx';
+import { Camera, CheckCircle2, CircleUser, Clock, Crown } from 'lucide-react';
 import type { PlayerInfo } from '../types/game';
 
 interface PlayerListProps {
@@ -12,44 +12,47 @@ export default function PlayerList({ players, myPlayerId }: PlayerListProps) {
       {players.map((player) => (
         <li
           key={player.player_id}
-          className={clsx(
-            'flex items-center justify-between rounded-lg px-3 py-2',
-            player.player_id === myPlayerId
-              ? 'bg-indigo-900/60 border border-indigo-500'
-              : 'bg-gray-700/60'
-          )}
+          className="flex items-center gap-3 rounded-2xl px-4 py-3 bg-white/10 backdrop-blur-sm border border-white/10"
         >
-          <div className="flex items-center gap-2 min-w-0">
-            {/* Host badge */}
-            {player.is_host && (
-              <span className="shrink-0 text-xs font-bold bg-yellow-500 text-black rounded px-1">HOST</span>
-            )}
-            <span className="truncate font-medium text-white">
+          {/* Avatar */}
+          <CircleUser className="w-9 h-9 text-white/70 shrink-0" />
+
+          {/* Name + host badge */}
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <span className="truncate font-bold text-white text-base">
               {player.name}
               {player.player_id === myPlayerId && (
-                <span className="ml-1 text-indigo-300 text-xs">(you)</span>
+                <span className="ml-1 text-white/60 text-sm font-semibold">(you)</span>
               )}
             </span>
+            {player.is_host && (
+              <span className="shrink-0 inline-flex items-center gap-1 text-xs font-extrabold bg-white/20 text-white rounded-lg px-2 py-0.5">
+                <Crown className="w-3 h-3" />
+                HOST
+              </span>
+            )}
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 ml-2">
-            {/* Photo count badge */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Photo count */}
             {player.photo_count > 0 && (
-              <span className="text-xs text-gray-400">
-                📷 {player.photo_count}
+              <span className="flex items-center gap-1 text-white/70 text-sm font-bold">
+                {player.photo_count}
+                <Camera className="w-4 h-4" />
               </span>
             )}
             {/* Ready badge */}
-            <span
-              className={clsx(
-                'text-xs font-semibold rounded px-1.5 py-0.5',
-                player.is_ready
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-600 text-gray-300'
-              )}
-            >
-              {player.is_ready ? '✓ Ready' : 'Not ready'}
-            </span>
+            {player.is_ready ? (
+              <span className="inline-flex items-center gap-1 bg-green-500 text-white text-xs font-bold rounded-full px-3 py-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Ready
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 bg-white/20 text-white text-xs font-bold rounded-full px-3 py-1.5">
+                <Clock className="w-3.5 h-3.5" />
+                Not Ready
+              </span>
+            )}
           </div>
         </li>
       ))}

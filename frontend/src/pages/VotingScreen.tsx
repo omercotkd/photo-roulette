@@ -41,53 +41,70 @@ export default function VotingScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col">
-      {/* Round indicator */}
-      <div className="text-center py-3 bg-gray-800 border-b border-gray-700">
-        <span className="text-gray-400 text-sm font-semibold">
-          Round {round.round_number} of {round.total_rounds}
-        </span>
+    <div className="min-h-screen flex flex-col">
+      {/* Round progress bars */}
+      <div className="flex gap-1.5 px-4 pt-5 pb-1">
+        {Array.from({ length: round.total_rounds }).map((_, i) => (
+          <div
+            key={i}
+            className={clsx(
+              'h-1 flex-1 rounded-full transition-colors',
+              i < round.round_number ? 'bg-white' : 'bg-white/30'
+            )}
+          />
+        ))}
+      </div>
+
+      {/* Title + compact timer */}
+      <div className="flex items-center justify-between px-4 py-3 gap-3">
+        <h2 className="text-2xl font-extrabold text-white leading-tight">
+          {state.myVote !== null ? 'Vote locked in!' : 'Who uploaded this?'}
+        </h2>
+        <div className="flex flex-col items-center shrink-0">
+          <CountdownTimer
+            totalSeconds={state.settings.vote_timer_seconds}
+            startedAtMs={startMs}
+            compact
+          />
+          <span className="text-white/55 text-xs font-bold mt-1">
+            {state.votesCast}/{state.totalPlayers}
+          </span>
+        </div>
       </div>
 
       {/* Media display */}
-      <div className="flex-1 flex items-center justify-center bg-black p-2 max-h-[40vh] md:max-h-[50vh]">
-        {round.media_type === 'image' ? (
-          <img
-            src={round.media_url}
-            alt="Round photo"
-            className="max-h-full max-w-full object-contain rounded-lg"
-          />
-        ) : (
-          <video
-            ref={videoRef}
-            src={round.media_url}
-            autoPlay
-            muted
-            playsInline
-            className="max-h-full max-w-full object-contain rounded-lg"
-          />
-        )}
-      </div>
-
-      {/* Timer + vote status */}
-      <div className="py-3 flex flex-col items-center gap-1">
-        <CountdownTimer
-          totalSeconds={state.settings.vote_timer_seconds}
-          startedAtMs={startMs}
-        />
-        <span className="text-gray-400 text-xs">
-          {state.votesCast} / {state.totalPlayers} voted
-        </span>
+      <div className="flex-1 flex items-center justify-center px-4 py-1 min-h-0">
+        <div
+          className="w-full rounded-3xl overflow-hidden bg-white/8 border border-white/15 flex items-center justify-center"
+          style={{ maxHeight: '42vh' }}
+        >
+          {round.media_type === 'image' ? (
+            <img
+              src={round.media_url}
+              alt="Round photo"
+              className="max-w-full object-contain"
+              style={{ maxHeight: '42vh' }}
+            />
+          ) : (
+            <video
+              ref={videoRef}
+              src={round.media_url}
+              autoPlay
+              muted
+              playsInline
+              className="max-w-full object-contain"
+              style={{ maxHeight: '42vh' }}
+            />
+          )}
+        </div>
       </div>
 
       {/* Vote buttons */}
-      <div className="px-4 pb-6 space-y-3">
-        {state.myVote !== null ? (
-          <div className="text-center text-gray-400 py-4 font-semibold">
-            ✓ Vote locked in — waiting for others…
-          </div>
-        ) : (
-          <p className="text-center text-gray-300 font-semibold mb-2">Who uploaded this?</p>
+      <div className="px-4 pb-8 pt-3">
+        {state.myVote !== null && (
+          <p className="text-center text-white/55 text-sm font-semibold mb-3">
+            Waiting for others to vote…
+          </p>
         )}
 
         <div className="grid grid-cols-2 gap-3">
@@ -101,17 +118,17 @@ export default function VotingScreen() {
                 onClick={() => handleVote(player.player_id)}
                 disabled={votingDone}
                 className={clsx(
-                  'py-4 rounded-xl font-bold text-base transition-all',
+                  'py-5 rounded-2xl font-bold text-base transition-all',
                   votingDone
                     ? isMyVote
-                      ? 'bg-indigo-600 text-white ring-2 ring-indigo-300 scale-105'
-                      : 'bg-gray-700 text-gray-500 opacity-60'
-                    : 'bg-gray-700 hover:bg-indigo-600 active:scale-95 text-white'
+                      ? 'bg-white/25 text-white ring-2 ring-white/40 scale-105'
+                      : 'bg-white/5 text-white/30'
+                    : 'bg-red-950/60 hover:bg-red-900/70 backdrop-blur-sm border border-white/10 active:scale-95 text-white'
                 )}
               >
                 {player.name}
                 {player.player_id === state.myPlayerId && (
-                  <span className="block text-xs font-normal opacity-70">(you)</span>
+                  <span className="block text-xs font-semibold opacity-55 mt-0.5">(you)</span>
                 )}
               </button>
             );

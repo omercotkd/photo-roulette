@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 
 interface CountdownTimerProps {
   totalSeconds: number;
-  startedAtMs: number; // performance.now() or Date.now() when round started
+  startedAtMs: number;
   onExpire?: () => void;
+  compact?: boolean;
 }
 
-export default function CountdownTimer({ totalSeconds, startedAtMs, onExpire }: CountdownTimerProps) {
+export default function CountdownTimer({ totalSeconds, startedAtMs, onExpire, compact }: CountdownTimerProps) {
   const radius = 44;
   const circumference = 2 * Math.PI * radius;
   const [remaining, setRemaining] = useState(totalSeconds);
@@ -29,9 +30,18 @@ export default function CountdownTimer({ totalSeconds, startedAtMs, onExpire }: 
 
   const fraction = remaining / totalSeconds;
   const dashOffset = circumference * (1 - fraction);
+  const color = fraction > 0.5 ? '#22c55e' : fraction > 0.25 ? '#f59e0b' : '#ef4444';
 
-  const color =
-    fraction > 0.5 ? '#22c55e' : fraction > 0.25 ? '#f59e0b' : '#ef4444';
+  if (compact) {
+    return (
+      <div
+        className="w-12 h-12 rounded-full bg-white/10 border-2 flex items-center justify-center shrink-0"
+        style={{ borderColor: color }}
+      >
+        <span className="text-base font-extrabold text-white">{Math.ceil(remaining)}</span>
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-24 h-24 flex items-center justify-center mx-auto">
@@ -40,7 +50,7 @@ export default function CountdownTimer({ totalSeconds, startedAtMs, onExpire }: 
         <circle
           cx="50" cy="50" r={radius}
           fill="none"
-          stroke="#374151"
+          stroke="rgba(255,255,255,0.1)"
           strokeWidth="8"
         />
         {/* Progress ring */}
@@ -55,7 +65,7 @@ export default function CountdownTimer({ totalSeconds, startedAtMs, onExpire }: 
           style={{ transition: 'stroke-dashoffset 0.1s linear, stroke 0.3s' }}
         />
       </svg>
-      <span className="absolute text-2xl font-bold text-white">
+      <span className="absolute text-2xl font-extrabold text-white">
         {Math.ceil(remaining)}
       </span>
     </div>

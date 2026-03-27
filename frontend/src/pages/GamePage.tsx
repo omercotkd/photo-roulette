@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { Dices } from 'lucide-react';
 import { useGame } from '../context/GameContext';
 import RevealScreen from './RevealScreen';
 import VotingScreen from './VotingScreen';
@@ -29,10 +30,10 @@ export default function GamePage() {
 
   if (state.isRestoring) {
     return (
-      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center gap-4">
-        <div className="text-6xl animate-bounce">🎰</div>
-        <h2 className="text-2xl font-bold text-white">Reconnecting…</h2>
-        <p className="text-gray-400">Restoring your session…</p>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <Dices className="w-16 h-16 text-white animate-bounce" />
+        <h2 className="text-2xl font-extrabold text-white">Reconnecting…</h2>
+        <p className="text-white/60 font-semibold">Restoring your session…</p>
       </div>
     );
   }
@@ -40,10 +41,10 @@ export default function GamePage() {
   // Show "Starting…" countdown banner briefly
   if (state.status === 'LOBBY') {
     return (
-      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center gap-4">
-        <div className="text-6xl animate-bounce">🎰</div>
-        <h2 className="text-2xl font-bold text-white">Game starting…</h2>
-        <p className="text-gray-400">Get ready!</p>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <Dices className="w-16 h-16 text-white animate-bounce" />
+        <h2 className="text-2xl font-extrabold text-white">Game starting…</h2>
+        <p className="text-white/60 font-semibold">Get ready!</p>
       </div>
     );
   }

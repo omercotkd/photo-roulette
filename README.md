@@ -2,6 +2,8 @@
 
 A local-network multiplayer party game. Players upload photos, and everyone tries to guess who uploaded each one.
 
+Entirely vibe-coded using github copilot, dont use in actual live server - just local host for a fun night with friends.
+
 ---
 
 ## Requirements
