@@ -1,8 +1,8 @@
 import clsx from 'clsx';
-import { CircleCheck, CircleX, Flame, Zap } from 'lucide-react';
+import { CircleCheck, CircleX, Dices, Flame, Zap } from 'lucide-react';
 import { useGame } from '../context/GameContext';
 import type { VoteInfo } from '../types/game';
-import { Dices } from 'lucide-react';
+import CountdownTimer from '../components/CountdownTimer';
 
 export default function RevealScreen() {
   const { state } = useGame();
@@ -23,9 +23,18 @@ export default function RevealScreen() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <div className="text-center py-5 px-4">
+      <div className="relative text-center py-5 px-4">
         <h2 className="text-2xl font-extrabold text-white">Round {data.round_number} Results</h2>
         <p className="text-white/50 text-sm font-semibold mt-0.5">Next round starting soon…</p>
+        {state.leaderboardStartedAtMs != null && (
+          <div className="absolute right-4 top-1/2 -translate-y-1/2">
+            <CountdownTimer
+              totalSeconds={state.settings.leaderboard_time_seconds}
+              startedAtMs={state.leaderboardStartedAtMs}
+              compact
+            />
+          </div>
+        )}
       </div>
 
       {/* Thumbnail */}

@@ -49,6 +49,7 @@ export interface GameState {
 
   // After round (ROUND_REVEAL / BETWEEN_ROUNDS)
   roundEndData: RoundEndData | null;
+  leaderboardStartedAtMs: number | null;
   leaderboard: LeaderboardEntry[];
 
   // Final
@@ -84,6 +85,7 @@ const initialState: GameState = {
   totalPlayers: 0,
   myVote: null,
   roundEndData: null,
+  leaderboardStartedAtMs: null,
   leaderboard: [],
   finalLeaderboard: [],
   connected: false,
@@ -193,6 +195,7 @@ function reducer(state: GameState, action: Action): GameState {
         totalPlayers: state.players.length,
         myVote: null,
         roundEndData: null,
+        leaderboardStartedAtMs: null,
       };
     case 'VOTE_PROGRESS':
       return { ...state, votesCast: action.votesCast, totalPlayers: action.totalPlayers };
@@ -201,6 +204,7 @@ function reducer(state: GameState, action: Action): GameState {
         ...state,
         status: 'ROUND_REVEAL',
         roundEndData: action.data,
+        leaderboardStartedAtMs: Date.now(),
         leaderboard: action.data.leaderboard,
         players: state.players.map((p) => {
           const entry = action.data.leaderboard.find((e) => e.player_id === p.player_id);
