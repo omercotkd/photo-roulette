@@ -134,9 +134,11 @@ async def _end_round(game_code: str) -> None:
     game.status = GameStatus.ROUND_REVEAL
     game.update_activity()
 
-    # Cancel still-running vote timer
+    # Cancel still-running vote timer, but never cancel ourselves
+    # (when the timer expires naturally, _end_round is called *from* the timer task,
+    # so task is asyncio.current_task() — cancelling it would abort _end_round mid-execution)
     task = round_timers.pop(game_code, None)
-    if task and not task.done():
+    if task and not task.done() and task is not asyncio.current_task():
         task.cancel()
 
     asset = game.round_pool[game.current_round_idx]

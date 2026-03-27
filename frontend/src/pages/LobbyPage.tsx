@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Camera, Dices, FolderOpen, Plus, Rocket, Settings2, Users } from 'lucide-react';
+import { Camera, Dices, FolderOpen, Plus, QrCode, Rocket, Settings2, Users } from 'lucide-react';
 import PhotoGrid from '../components/PhotoGrid';
 import PlayerList from '../components/PlayerList';
+import QRModal from '../components/QRModal';
 import { useGame } from '../context/GameContext';
 import type { UploadedPhoto } from '../types/game';
 
@@ -18,6 +19,7 @@ export default function LobbyPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
   const [starting, setStarting] = useState(false);
+  const [showQR, setShowQR] = useState(false);
 
   // Settings form (host only)
   const [settingsForm, setSettingsForm] = useState({
@@ -182,6 +184,9 @@ export default function LobbyPage() {
 
   return (
     <div className="min-h-screen text-white">
+      {showQR && code && (
+        <QRModal gameCode={code} onClose={() => setShowQR(false)} />
+      )}
       {/* Header card */}
       <header className="px-4 pt-5 pb-2">
         <div className="rounded-3xl bg-black/25 backdrop-blur-md border border-white/10 px-5 py-4 flex items-center justify-between">
@@ -189,7 +194,16 @@ export default function LobbyPage() {
             <span className="text-3xl font-extrabold text-white/40 leading-none mt-0.5">#</span>
             <div>
               <div className="text-xs text-white/50 uppercase tracking-widest font-bold">Game Code</div>
-              <div className="text-3xl font-extrabold text-white tracking-widest font-mono">{code}</div>
+              <div className="flex items-center gap-2">
+                <div className="text-3xl font-extrabold text-white tracking-widest font-mono">{code}</div>
+                <button
+                  onClick={() => setShowQR(true)}
+                  className="text-white/50 hover:text-white transition-colors"
+                  aria-label="Share QR code"
+                >
+                  <QrCode className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-1.5 text-white/70">

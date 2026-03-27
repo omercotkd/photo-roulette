@@ -3,6 +3,7 @@ import { GameProvider } from './context/GameContext';
 import GameOverScreen from './pages/GameOverScreen';
 import GamePage from './pages/GamePage';
 import HomePage from './pages/HomePage';
+import JoinPage from './pages/JoinPage';
 import LobbyPage from './pages/LobbyPage';
 
 function App() {
@@ -11,6 +12,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/join/:code" element={<JoinPage />} />
           <Route path="/lobby/:code" element={<LobbyPage />} />
           <Route path="/game/:code" element={<GamePage />} />
           <Route path="/game/:code/over" element={<GameOverScreen />} />
