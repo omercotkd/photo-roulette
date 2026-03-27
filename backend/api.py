@@ -304,6 +304,33 @@ async def play_again(code: str, token: str = Depends(_get_token)):
     return {"status": "reset"}
 
 
+@router.post("/games/{code}/kick/{player_id}")
+async def kick_player(code: str, player_id: str, token: str = Depends(_get_token)):
+    game = _get_game(code)
+    host = _require_host(game, token)
+
+    if game.status != GameStatus.LOBBY:
+        raise HTTPException(400, "Can only kick players in the lobby.")
+
+    target = game.players.get(player_id)
+    if not target:
+        raise HTTPException(404, "Player not found.")
+
+    if target.player_id == host.player_id:
+        raise HTTPException(400, "Cannot kick yourself.")
+
+    del game.players[player_id]
+    game.update_activity()
+
+    await sio.emit(
+        "player_kicked",
+        {"player_id": player_id, "players": [_player_to_dict(p) for p in game.players.values()]},
+        room=code,
+    )
+
+    return {"success": True}
+
+
 @router.get("/games/{code}/state")
 async def get_game_state(code: str, token: str = Depends(_get_token)):
     """Lightweight state poll for reconnect (supplements Socket.IO room_state)."""

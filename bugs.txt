@@ -1,5 +1,0 @@
-You can upload more then 16 files if you select more then 16 in the uipload photo section.
-
-HOST need an option to kick players - players are prevnting start if they are not online.
-
-

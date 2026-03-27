@@ -59,6 +59,7 @@ export interface GameState {
   connected: boolean;
   error: string | null;
   isRestoring: boolean;
+  wasKicked: boolean;
 }
 
 const defaultSettings: GameSettings = {
@@ -91,6 +92,7 @@ const initialState: GameState = {
   connected: false,
   error: null,
   isRestoring: false,
+  wasKicked: false,
 };
 
 // ---------------------------------------------------------------------------
@@ -117,6 +119,7 @@ type Action =
   | { type: 'PHOTO_SWAPPED'; data: PhotoSwappedData }
   | { type: 'SET_ERROR'; message: string | null }
   | { type: 'RESTORE_FAILED'; message: string }
+  | { type: 'KICKED' }
   | { type: 'RESET' };
 
 function reducer(state: GameState, action: Action): GameState {
@@ -249,6 +252,8 @@ function reducer(state: GameState, action: Action): GameState {
       return { ...initialState, error: action.message };
     case 'SET_ERROR':
       return { ...state, error: action.message };
+    case 'KICKED':
+      return { ...initialState, wasKicked: true };
     case 'RESET':
       return initialState;
     default:
@@ -304,6 +309,17 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     socket.on('room_state', (payload: RoomState) => dispatch({ type: 'ROOM_STATE', payload }));
     socket.on('player_joined', (d: { players: PlayerInfo[] }) => dispatch({ type: 'PLAYER_JOINED', players: d.players }));
     socket.on('player_left', (d: { players: PlayerInfo[] }) => dispatch({ type: 'PLAYER_LEFT', players: d.players }));
+    socket.on('player_kicked', (d: { player_id: string; players: PlayerInfo[] }) => {
+      if (d.player_id === stateRef.current.myPlayerId) {
+        sessionStorage.removeItem('pr_game_code');
+        sessionStorage.removeItem('pr_player_id');
+        sessionStorage.removeItem('pr_token');
+        sessionStorage.removeItem('pr_name');
+        dispatch({ type: 'KICKED' });
+      } else {
+        dispatch({ type: 'PLAYER_LEFT', players: d.players });
+      }
+    });
     socket.on('player_ready_changed', (d: { player_id: string; is_ready: boolean }) =>
       dispatch({ type: 'PLAYER_READY_CHANGED', playerId: d.player_id, isReady: d.is_ready })
     );

@@ -53,6 +53,13 @@ export default function LobbyPage() {
     }
   }, [state.isRestoring, state.gameCode, state.error, navigate, code]);
 
+  // Navigate if kicked by host
+  useEffect(() => {
+    if (state.wasKicked) {
+      navigate('/', { state: { error: 'You were kicked by the host.' } });
+    }
+  }, [state.wasKicked, navigate]);
+
   const isReady = state.players.find((p) => p.player_id === state.myPlayerId)?.is_ready ?? false;
   const allReady = state.players.length >= 2 && state.players.every((p) => p.is_ready);
 
@@ -186,6 +193,21 @@ export default function LobbyPage() {
     }
   }
 
+  async function handleKick(targetPlayerId: string) {
+    try {
+      const res = await fetch(`${API}/games/${code}/kick/${targetPlayerId}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${state.myToken}` },
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        dispatch({ type: 'SET_ERROR', message: d.detail ?? 'Could not kick player' });
+      }
+    } catch {
+      dispatch({ type: 'SET_ERROR', message: 'Network error while kicking player' });
+    }
+  }
+
   if (state.isRestoring) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
@@ -242,7 +264,11 @@ export default function LobbyPage() {
         {/* Players */}
         <section>
           <h2 className="text-xs font-extrabold text-white/50 uppercase tracking-widest mb-2">Players</h2>
-          <PlayerList players={state.players} myPlayerId={state.myPlayerId} />
+          <PlayerList
+            players={state.players}
+            myPlayerId={state.myPlayerId}
+            onKick={state.isHost ? handleKick : undefined}
+          />
         </section>
 
         {/* Host Settings */}

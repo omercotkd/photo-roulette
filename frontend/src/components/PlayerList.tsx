@@ -1,12 +1,13 @@
-import { Camera, CheckCircle2, CircleUser, Clock, Crown } from 'lucide-react';
+import { Camera, CheckCircle2, CircleUser, Clock, Crown, UserX } from 'lucide-react';
 import type { PlayerInfo } from '../types/game';
 
 interface PlayerListProps {
   players: PlayerInfo[];
   myPlayerId: string | null;
+  onKick?: (playerId: string) => void;
 }
 
-export default function PlayerList({ players, myPlayerId }: PlayerListProps) {
+export default function PlayerList({ players, myPlayerId, onKick }: PlayerListProps) {
   return (
     <ul className="space-y-2">
       {players.map((player) => (
@@ -52,6 +53,17 @@ export default function PlayerList({ players, myPlayerId }: PlayerListProps) {
                 <Clock className="w-3.5 h-3.5" />
                 Not Ready
               </span>
+            )}
+            {/* Kick button (host only, not on self or other hosts) */}
+            {onKick && !player.is_host && player.player_id !== myPlayerId && (
+              <button
+                onClick={() => onKick(player.player_id)}
+                className="p-1.5 rounded-xl bg-red-500/20 hover:bg-red-500/40 text-red-300 hover:text-red-200 transition-colors"
+                aria-label={`Kick ${player.name}`}
+                title={`Kick ${player.name}`}
+              >
+                <UserX className="w-4 h-4" />
+              </button>
             )}
           </div>
         </li>
