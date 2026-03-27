@@ -16,10 +16,26 @@ export default function GamePage() {
   }, [state.status, code, navigate]);
 
   useEffect(() => {
-    if (state.status === 'LOBBY') {
+    if (!state.isRestoring && state.status === 'LOBBY') {
       navigate(`/lobby/${code}`);
     }
-  }, [state.status, code, navigate]);
+  }, [state.isRestoring, state.status, code, navigate]);
+
+  useEffect(() => {
+    if (!state.isRestoring && !state.gameCode) {
+      navigate('/', { state: { error: state.error } });
+    }
+  }, [state.isRestoring, state.gameCode, state.error, navigate]);
+
+  if (state.isRestoring) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center gap-4">
+        <div className="text-6xl animate-bounce">🎰</div>
+        <h2 className="text-2xl font-bold text-white">Reconnecting…</h2>
+        <p className="text-gray-400">Restoring your session…</p>
+      </div>
+    );
+  }
 
   // Show "Starting…" countdown banner briefly
   if (state.status === 'LOBBY') {

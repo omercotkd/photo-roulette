@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useGame } from '../context/GameContext';
 
 const API = '/api';
@@ -7,12 +7,13 @@ const API = '/api';
 export default function HomePage() {
   const { initSession } = useGame();
   const navigate = useNavigate();
+  const location = useLocation();
   const [mode, setMode] = useState<'home' | 'create' | 'join'>('home');
   const [hostName, setHostName] = useState('');
   const [joinName, setJoinName] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string>(typeof location.state?.error === 'string' ? location.state.error : '');
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();

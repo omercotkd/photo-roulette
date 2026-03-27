@@ -57,6 +57,7 @@ export interface GameState {
   // UI state
   connected: boolean;
   error: string | null;
+  isRestoring: boolean;
 }
 
 const defaultSettings: GameSettings = {
@@ -87,6 +88,7 @@ const initialState: GameState = {
   finalLeaderboard: [],
   connected: false,
   error: null,
+  isRestoring: false,
 };
 
 // ---------------------------------------------------------------------------
@@ -112,6 +114,7 @@ type Action =
   | { type: 'PHOTOS_UPDATED'; selected: UploadedPhoto[]; uploaded: UploadedPhoto[]; hasSwapPool: boolean }
   | { type: 'PHOTO_SWAPPED'; data: PhotoSwappedData }
   | { type: 'SET_ERROR'; message: string | null }
+  | { type: 'RESTORE_FAILED'; message: string }
   | { type: 'RESET' };
 
 function reducer(state: GameState, action: Action): GameState {
@@ -141,6 +144,7 @@ function reducer(state: GameState, action: Action): GameState {
         mySelectedPhotos: p.my_selected_photos ?? state.mySelectedPhotos,
         myUploadedPhotos: p.my_uploaded_photos ?? state.myUploadedPhotos,
         hasSwapPool: p.has_swap_pool ?? state.hasSwapPool,
+        isRestoring: false,
         currentRound:
           p.status === 'IN_ROUND' && p.current_media_url
             ? {
@@ -151,6 +155,12 @@ function reducer(state: GameState, action: Action): GameState {
                 media_type: p.current_media_type ?? 'image',
               }
             : state.currentRound,
+        finalLeaderboard:
+          p.status === 'GAME_OVER'
+            ? [...p.players]
+                .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+                .map((pl) => ({ player_id: pl.player_id, name: pl.name, score: pl.score ?? 0, streak: pl.streak ?? 0, delta: 0 }))
+            : state.finalLeaderboard,
       };
     }
     case 'PLAYER_JOINED':
@@ -231,6 +241,8 @@ function reducer(state: GameState, action: Action): GameState {
         mySelectedPhotos: action.data.selected_photos,
         hasSwapPool: action.data.has_swap_pool,
       };
+    case 'RESTORE_FAILED':
+      return { ...initialState, error: action.message };
     case 'SET_ERROR':
       return { ...state, error: action.message };
     case 'RESET':
@@ -258,10 +270,21 @@ const GameContext = createContext<GameContextValue>({
   initSession: () => {},
 });
 
+function getInitialState(): GameState {
+  const gameCode = sessionStorage.getItem('pr_game_code');
+  const myPlayerId = sessionStorage.getItem('pr_player_id');
+  const myToken = sessionStorage.getItem('pr_token');
+  const myName = sessionStorage.getItem('pr_name');
+  if (gameCode && myPlayerId && myToken && myName) {
+    return { ...initialState, gameCode, myPlayerId, myToken, myName, isRestoring: true };
+  }
+  return initialState;
+}
+
 const SOCKET_URL = `http://${window.location.hostname}:8000`;
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(reducer, undefined, getInitialState);
   const socketRef = useRef<Socket | null>(null);
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -297,7 +320,17 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     );
     socket.on('play_again', () => dispatch({ type: 'PLAY_AGAIN' }));
     socket.on('photo_swapped', (data: PhotoSwappedData) => dispatch({ type: 'PHOTO_SWAPPED', data }));
-    socket.on('error', (d: { message: string }) => dispatch({ type: 'SET_ERROR', message: d.message }));
+    socket.on('error', (d: { message: string }) => {
+      if (stateRef.current.isRestoring) {
+        sessionStorage.removeItem('pr_game_code');
+        sessionStorage.removeItem('pr_player_id');
+        sessionStorage.removeItem('pr_token');
+        sessionStorage.removeItem('pr_name');
+        dispatch({ type: 'RESTORE_FAILED', message: 'Your game session has expired.' });
+      } else {
+        dispatch({ type: 'SET_ERROR', message: d.message });
+      }
+    });
 
     // On reconnect, re-join the room if we have an active session
     socket.on('connect', () => {
@@ -332,18 +365,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     },
     []
   );
-
-  // On mount, restore session if available
-  useEffect(() => {
-    const gameCode = sessionStorage.getItem('pr_game_code');
-    const playerId = sessionStorage.getItem('pr_player_id');
-    const token = sessionStorage.getItem('pr_token');
-    const name = sessionStorage.getItem('pr_name');
-    if (gameCode && playerId && token && name) {
-      dispatch({ type: 'SET_IDENTITY', gameCode, playerId, token, name, isHost: false });
-      // join_room will be emitted once socket connects (handled in connect handler above)
-    }
-  }, []);
 
   return (
     <GameContext.Provider value={{ state, dispatch, socket: socketRef.current, initSession }}>

@@ -1,5 +1,6 @@
-1. Presist login sessions on window referesh
+<!-- 1. Presist login sessions on window referesh -->
 2. QR code sharing (e.g qr will be (http://<host-ip>:8000/join?code=123456))
+3. Merge the leader board and correct result screen togther
    
 
 TODO:

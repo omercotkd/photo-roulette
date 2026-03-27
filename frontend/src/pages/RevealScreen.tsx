@@ -16,7 +16,15 @@ export default function RevealScreen() {
     return () => clearTimeout(t);
   }, [data?.round_number]);
 
-  if (!data) return null;
+  if (!data) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center gap-4">
+        <div className="text-6xl animate-bounce">🎰</div>
+        <h2 className="text-2xl font-bold text-white">Loading results…</h2>
+        <p className="text-gray-400">Please wait</p>
+      </div>
+    );
+  }
 
   if (phase === 'leaderboard') {
     return (

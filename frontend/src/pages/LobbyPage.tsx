@@ -43,13 +43,12 @@ export default function LobbyPage() {
     }
   }, [state.status, code, navigate]);
 
-  // Navigate if game code is in session but not in URL (page refresh)
+  // Navigate if no session (only when restore is complete)
   useEffect(() => {
-    if (!state.gameCode && code) {
-      // Not authenticated — redirect home
-      navigate('/');
+    if (!state.isRestoring && !state.gameCode) {
+      navigate('/', { state: { error: state.error } });
     }
-  }, [state.gameCode, code, navigate]);
+  }, [state.isRestoring, state.gameCode, state.error, navigate, code]);
 
   const isReady = state.players.find((p) => p.player_id === state.myPlayerId)?.is_ready ?? false;
   const allReady = state.players.length >= 2 && state.players.every((p) => p.is_ready);
@@ -170,9 +169,18 @@ export default function LobbyPage() {
     }
   }
 
+  if (state.isRestoring) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center gap-4">
+        <div className="text-6xl animate-bounce">🎰</div>
+        <h2 className="text-2xl font-bold text-white">Reconnecting…</h2>
+        <p className="text-gray-400">Restoring your session…</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
-      {/* Header */}
       <header className="bg-gray-800 border-b border-gray-700 px-4 py-3 flex items-center justify-between">
         <div>
           <div className="text-xs text-gray-400 uppercase tracking-widest">Game Code</div>
