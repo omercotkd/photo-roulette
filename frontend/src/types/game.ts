@@ -40,6 +40,7 @@ export interface VoteInfo {
   voted_for_name: string | null;
   correct: boolean;
   points_earned: number;
+  elapsed_ms?: number | null;
 }
 
 export interface LeaderboardEntry {

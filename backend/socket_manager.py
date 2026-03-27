@@ -178,6 +178,7 @@ async def _end_round(game_code: str) -> None:
                 "voted_for_name": voted_for_name,
                 "correct": correct,
                 "points_earned": points,
+                "elapsed_ms": round(player.current_round_vote_elapsed_ms) if player.current_round_vote_elapsed_ms is not None else None,
             }
         )
 

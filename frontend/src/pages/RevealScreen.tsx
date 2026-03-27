@@ -1,20 +1,12 @@
 import clsx from 'clsx';
-import { useEffect, useState } from 'react';
-import ScoreCard from '../components/ScoreCard';
 import { useGame } from '../context/GameContext';
+import type { VoteInfo } from '../types/game';
 
-const REVEAL_PHASE_MS = 5000; // show vote breakdown for 5s, then leaderboard
+const MEDALS = ['🥇', '🥈', '🥉'];
 
 export default function RevealScreen() {
   const { state } = useGame();
   const data = state.roundEndData;
-  const [phase, setPhase] = useState<'reveal' | 'leaderboard'>('reveal');
-
-  useEffect(() => {
-    setPhase('reveal');
-    const t = setTimeout(() => setPhase('leaderboard'), REVEAL_PHASE_MS);
-    return () => clearTimeout(t);
-  }, [data?.round_number]);
 
   if (!data) {
     return (
@@ -26,37 +18,17 @@ export default function RevealScreen() {
     );
   }
 
-  if (phase === 'leaderboard') {
-    return (
-      <div className="min-h-screen bg-gray-900 flex flex-col">
-        <div className="text-center py-4 bg-gray-800 border-b border-gray-700">
-          <h2 className="text-xl font-bold text-white">
-            Leaderboard — Round {data.round_number}
-          </h2>
-          <p className="text-xs text-gray-500 mt-0.5">Next round starting soon…</p>
-        </div>
-        <div className="flex-1 overflow-y-auto px-4 py-4">
-          <ScoreCard
-            entries={state.leaderboard}
-            myPlayerId={state.myPlayerId}
-            showDelta
-          />
-        </div>
-      </div>
-    );
-  }
+  const voteMap = new Map<string, VoteInfo>(data.votes.map((v) => [v.voter_id, v]));
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col">
-      {/* Owner banner */}
-      <div className="text-center py-4 bg-indigo-900/70 border-b border-indigo-700">
-        <div className="text-xs text-indigo-300 uppercase tracking-widest font-semibold mb-1">
-          Photo owner
-        </div>
-        <div className="text-2xl font-extrabold text-white">{data.owner_name}</div>
+      {/* Header */}
+      <div className="text-center py-4 bg-gray-800 border-b border-gray-700">
+        <h2 className="text-xl font-bold text-white">Round {data.round_number} Results</h2>
+        <p className="text-xs text-gray-500 mt-0.5">Next round starting soon…</p>
       </div>
 
-      {/* Thumbnail (small) */}
+      {/* Thumbnail */}
       <div className="flex justify-center py-3 bg-black">
         {data.media_type === 'image' ? (
           <img
@@ -74,38 +46,65 @@ export default function RevealScreen() {
         )}
       </div>
 
-      {/* Vote breakdown */}
+      {/* Combined leaderboard + votes */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
-        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Votes</h3>
-        <ul className="space-y-2">
-          {data.votes.map((vote) => {
-            const isMe = vote.voter_id === state.myPlayerId;
+        <ol className="space-y-2">
+          {state.leaderboard.map((entry, idx) => {
+            const vote = voteMap.get(entry.player_id);
+            const isMe = entry.player_id === state.myPlayerId;
+            const correct = vote?.correct ?? false;
+            const elapsedSec =
+              vote?.elapsed_ms != null && vote.voted_for_id != null
+                ? (vote.elapsed_ms / 1000).toFixed(1)
+                : null;
+
             return (
               <li
-                key={vote.voter_id}
+                key={entry.player_id}
                 className={clsx(
-                  'flex items-center gap-3 rounded-lg px-3 py-2',
-                  isMe ? 'bg-indigo-900/50 border border-indigo-600' : 'bg-gray-800'
+                  'rounded-lg px-3 py-2',
+                  isMe ? 'bg-indigo-900/60 border border-indigo-500' : 'bg-gray-700/60'
                 )}
               >
-                <span className="text-xl">{vote.correct ? '✅' : '❌'}</span>
-                <div className="flex-1 min-w-0">
-                  <span className="font-semibold text-white">{vote.voter_name}</span>
-                  {isMe && <span className="ml-1 text-xs text-indigo-300">(you)</span>}
-                  <span className="text-gray-400 text-sm">
-                    {' '}→{' '}
-                    <span className={vote.correct ? 'text-green-400' : 'text-red-400'}>
-                      {vote.voted_for_name ?? '— no vote —'}
-                    </span>
+                {/* Top row: rank · correctness · name · streak · total score */}
+                <div className="flex items-center gap-2">
+                  <span className="text-lg w-8 text-center shrink-0">
+                    {MEDALS[idx] ?? <span className="text-gray-400 text-sm font-bold">{idx + 1}</span>}
+                  </span>
+                  <span className="text-base shrink-0">{correct ? '✅' : '❌'}</span>
+                  <span className="flex-1 font-semibold text-white truncate">
+                    {entry.name}
+                    {isMe && <span className="ml-1 text-xs text-indigo-300">(you)</span>}
+                  </span>
+                  {entry.streak >= 2 && (
+                    <span className="text-sm text-orange-400 shrink-0">🔥 {entry.streak}</span>
+                  )}
+                  <span className="font-bold text-white text-lg shrink-0 min-w-[4rem] text-right">
+                    {entry.score.toLocaleString()}
                   </span>
                 </div>
-                {vote.points_earned > 0 && (
-                  <span className="text-green-400 font-bold text-sm shrink-0">+{vote.points_earned}</span>
-                )}
+
+                {/* Bottom row: voted for · elapsed · delta */}
+                <div className="flex items-center gap-2 mt-1 pl-10 text-sm">
+                  <span className={clsx('truncate', correct ? 'text-green-400' : 'text-red-400')}>
+                    → {vote?.voted_for_name ?? '— no vote —'}
+                  </span>
+                  {elapsedSec != null && (
+                    <>
+                      <span className="text-gray-600">·</span>
+                      <span className="text-gray-400 shrink-0">⚡ {elapsedSec}s</span>
+                    </>
+                  )}
+                  {entry.delta > 0 && (
+                    <span className="ml-auto text-green-400 font-semibold shrink-0">
+                      +{entry.delta}
+                    </span>
+                  )}
+                </div>
               </li>
             );
           })}
-        </ul>
+        </ol>
       </div>
     </div>
   );
