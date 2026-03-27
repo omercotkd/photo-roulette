@@ -137,6 +137,20 @@ export default function LobbyPage() {
     uploadFiles(sampled);
   }
 
+  function handleFileChange(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    if (files.length <= 16) {
+      uploadFiles(files);
+      return;
+    }
+    const arr = Array.from(files);
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    uploadFiles(arr.slice(0, 16));
+  }
+
   function handleReadyToggle() {
     socket?.emit('set_ready', { ready: !isReady });
   }
@@ -357,7 +371,7 @@ export default function LobbyPage() {
             multiple
             accept={state.settings.videos_allowed ? 'image/*,video/*' : 'image/*'}
             className="hidden"
-            onChange={(e) => uploadFiles(e.target.files)}
+            onChange={(e) => handleFileChange(e.target.files)}
           />
           <input
             ref={folderInputRef}
