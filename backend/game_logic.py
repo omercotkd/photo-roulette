@@ -16,7 +16,11 @@ def generate_round_pool(game: Game) -> list[RoundAsset]:
 
     Raises ValueError if total selected photos < rounds required.
     """
-    players = list(game.players.values())
+    # In Party Mode the host is not a player — exclude them from the pool.
+    if game.settings.party_mode:
+        players = [p for p in game.players.values() if not p.is_host]
+    else:
+        players = list(game.players.values())
     rounds = game.settings.rounds
     player_count = len(players)
 
@@ -80,6 +84,9 @@ def build_leaderboard(game: Game, deltas: dict[str, int]) -> list[dict]:
     """Return sorted leaderboard list for a game."""
     entries = []
     for player in game.players.values():
+        # In Party Mode the host is a display only — exclude from leaderboard.
+        if game.settings.party_mode and player.is_host:
+            continue
         entries.append(
             {
                 "player_id": player.player_id,

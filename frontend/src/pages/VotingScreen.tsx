@@ -9,6 +9,9 @@ export default function VotingScreen() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [startMs, setStartMs] = useState(Date.now());
 
+  const isPartyMode = state.settings.party_mode;
+  const isHostDisplay = isPartyMode && state.isHost;
+
   // Re-set timer whenever a new round starts
   useEffect(() => {
     setStartMs(Date.now());
@@ -40,6 +43,11 @@ export default function VotingScreen() {
     });
   }
 
+  // In Party Mode only non-host players are valid vote targets.
+  const votablePlayers = isPartyMode
+    ? state.players.filter((p) => !p.is_host)
+    : state.players;
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Round progress bars */}
@@ -58,7 +66,11 @@ export default function VotingScreen() {
       {/* Title + compact timer */}
       <div className="flex items-center justify-between px-4 py-3 gap-3">
         <h2 className="text-2xl font-extrabold text-white leading-tight">
-          {state.myVote !== null ? 'Vote locked in!' : 'Who uploaded this?'}
+          {isHostDisplay
+            ? 'Players are voting…'
+            : state.myVote !== null
+            ? 'Vote locked in!'
+            : 'Who uploaded this?'}
         </h2>
         <div className="flex flex-col items-center shrink-0">
           <CountdownTimer
@@ -72,69 +84,73 @@ export default function VotingScreen() {
         </div>
       </div>
 
-      {/* Media display */}
-      <div className="flex-1 flex items-center justify-center px-4 py-1 min-h-0">
-        <div
-          className="w-full rounded-3xl overflow-hidden bg-white/8 border border-white/15 flex items-center justify-center"
-          style={{ maxHeight: '42vh' }}
-        >
-          {round.media_type === 'image' ? (
-            <img
-              src={round.media_url}
-              alt="Round photo"
-              className="max-w-full object-contain"
-              style={{ maxHeight: '42vh' }}
-            />
-          ) : (
-            <video
-              ref={videoRef}
-              src={round.media_url}
-              autoPlay
-              muted
-              playsInline
-              className="max-w-full object-contain"
-              style={{ maxHeight: '42vh' }}
-            />
+      {/* Media display — shown to all in normal mode; in Party Mode only the host display shows it */}
+      {(!isPartyMode || isHostDisplay) && (
+        <div className="flex-1 flex items-center justify-center px-4 py-1 min-h-0">
+          <div
+            className="w-full rounded-3xl overflow-hidden bg-white/8 border border-white/15 flex items-center justify-center"
+            style={{ maxHeight: '42vh' }}
+          >
+            {round.media_type === 'image' ? (
+              <img
+                src={round.media_url}
+                alt="Round photo"
+                className="max-w-full object-contain"
+                style={{ maxHeight: '42vh' }}
+              />
+            ) : (
+              <video
+                ref={videoRef}
+                src={round.media_url}
+                autoPlay
+                muted
+                playsInline
+                className="max-w-full object-contain"
+                style={{ maxHeight: '42vh' }}
+              />
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Vote buttons — hidden for the host display in Party Mode */}
+      {!isHostDisplay && (
+        <div className="px-4 pb-8 pt-3">
+          {state.myVote !== null && (
+            <p className="text-center text-white/55 text-sm font-semibold mb-3">
+              Waiting for others to vote…
+            </p>
           )}
+
+          <div className="grid grid-cols-2 gap-3">
+            {votablePlayers.map((player) => {
+              const isMyVote = state.myVote === player.player_id;
+              const votingDone = state.myVote !== null;
+
+              return (
+                <button
+                  key={player.player_id}
+                  onClick={() => handleVote(player.player_id)}
+                  disabled={votingDone}
+                  className={clsx(
+                    'py-5 rounded-2xl font-bold text-base transition-all',
+                    votingDone
+                      ? isMyVote
+                        ? 'bg-white/25 text-white ring-2 ring-white/40 scale-105'
+                        : 'bg-white/5 text-white/30'
+                      : 'bg-red-950/60 hover:bg-red-900/70 backdrop-blur-sm border border-white/10 active:scale-95 text-white'
+                  )}
+                >
+                  {player.name}
+                  {player.player_id === state.myPlayerId && (
+                    <span className="block text-xs font-semibold opacity-55 mt-0.5">(you)</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
-
-      {/* Vote buttons */}
-      <div className="px-4 pb-8 pt-3">
-        {state.myVote !== null && (
-          <p className="text-center text-white/55 text-sm font-semibold mb-3">
-            Waiting for others to vote…
-          </p>
-        )}
-
-        <div className="grid grid-cols-2 gap-3">
-          {state.players.map((player) => {
-            const isMyVote = state.myVote === player.player_id;
-            const votingDone = state.myVote !== null;
-
-            return (
-              <button
-                key={player.player_id}
-                onClick={() => handleVote(player.player_id)}
-                disabled={votingDone}
-                className={clsx(
-                  'py-5 rounded-2xl font-bold text-base transition-all',
-                  votingDone
-                    ? isMyVote
-                      ? 'bg-white/25 text-white ring-2 ring-white/40 scale-105'
-                      : 'bg-white/5 text-white/30'
-                    : 'bg-red-950/60 hover:bg-red-900/70 backdrop-blur-sm border border-white/10 active:scale-95 text-white'
-                )}
-              >
-                {player.name}
-                {player.player_id === state.myPlayerId && (
-                  <span className="block text-xs font-semibold opacity-55 mt-0.5">(you)</span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      )}
     </div>
   );
 }

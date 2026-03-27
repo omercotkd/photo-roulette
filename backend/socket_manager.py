@@ -49,6 +49,7 @@ def _settings_to_dict(game: Game) -> dict:
         "vote_timer_seconds": s.vote_timer_seconds,
         "leaderboard_time_seconds": s.leaderboard_time_seconds,
         "videos_allowed": s.videos_allowed,
+        "party_mode": s.party_mode,
     }
 
 
@@ -150,6 +151,10 @@ async def _end_round(game_code: str) -> None:
     votes = []
     deltas: dict[str, int] = {}
     for player in game.players.values():
+        # In Party Mode the host is a display — skip them from scoring and vote records.
+        if game.settings.party_mode and player.is_host:
+            continue
+
         voted_for_id = player.current_round_vote
         correct = voted_for_id == asset.owner_player_id
         points = 0
@@ -305,6 +310,10 @@ async def on_set_ready(sid: str, data: dict) -> None:
     if not player:
         return
 
+    # In Party Mode the host is a display — readiness is irrelevant for them.
+    if game.settings.party_mode and player.is_host:
+        return
+
     # Cannot be ready without at least 1 selected photo
     if data.get("ready") and len(player.selected_photos) == 0:
         await sio.emit("error", {"message": "Upload at least one photo before readying up."}, to=sid)
@@ -334,12 +343,21 @@ async def on_cast_vote(sid: str, data: dict) -> None:
     if not player:
         return
 
+    # In Party Mode the host is a display — they cannot vote.
+    if game.settings.party_mode and player.is_host:
+        return
+
     # Vote is immediately locked — ignore any duplicate votes
     if player.current_round_vote is not None:
         return
 
     voted_for_player_id = str(data.get("voted_for_player_id", ""))
     if voted_for_player_id not in game.players:
+        return
+
+    # In Party Mode the host is not a valid vote target.
+    target = game.players.get(voted_for_player_id)
+    if game.settings.party_mode and target and target.is_host:
         return
 
     # Validate round_idx matches current round
@@ -351,15 +369,22 @@ async def on_cast_vote(sid: str, data: dict) -> None:
     player.current_round_vote_elapsed_ms = elapsed_ms
     game.update_activity()
 
-    votes_cast = sum(1 for p in game.players.values() if p.current_round_vote is not None)
+    # In Party Mode only non-host players vote.
+    if game.settings.party_mode:
+        eligible_players = [p for p in game.players.values() if not p.is_host]
+    else:
+        eligible_players = list(game.players.values())
+
+    votes_cast = sum(1 for p in eligible_players if p.current_round_vote is not None)
+    total_voters = len(eligible_players)
     await sio.emit(
         "vote_progress",
-        {"votes_cast": votes_cast, "total_players": len(game.players)},
+        {"votes_cast": votes_cast, "total_players": total_voters},
         room=game_code,
     )
 
-    # If all players voted, end round immediately
-    if votes_cast == len(game.players):
+    # If all eligible players voted, end round immediately
+    if votes_cast == total_voters:
         await _end_round(game_code)
 
 

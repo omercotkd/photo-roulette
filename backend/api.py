@@ -136,6 +136,8 @@ async def update_settings(code: str, body: UpdateSettingsRequest, token: str = D
         s.leaderboard_time_seconds = body.leaderboard_time_seconds
     if body.videos_allowed is not None:
         s.videos_allowed = body.videos_allowed
+    if body.party_mode is not None:
+        s.party_mode = body.party_mode
 
     game.update_activity()
 
@@ -150,6 +152,9 @@ async def upload_photo(code: str, file: UploadFile, token: str = Depends(_get_to
 
     if game.status != GameStatus.LOBBY:
         raise HTTPException(400, "Cannot upload photos after game has started.")
+
+    if game.settings.party_mode and player.is_host:
+        raise HTTPException(403, "The host does not upload photos in Party Mode.")
 
     content_type = (file.content_type or "").lower()
     is_video = content_type.startswith("video/")
@@ -229,14 +234,23 @@ async def start_game(code: str, token: str = Depends(_get_token)):
 
     if game.status != GameStatus.LOBBY:
         raise HTTPException(400, "Game has already started.")
-    if len(game.players) < 2:
-        raise HTTPException(400, "Need at least 2 players to start.")
 
-    not_ready = [p.name for p in game.players.values() if not p.is_ready]
-    if not_ready:
-        raise HTTPException(400, f"Players not ready: {', '.join(not_ready)}")
+    if game.settings.party_mode:
+        non_host_players = [p for p in game.players.values() if not p.is_host]
+        if len(non_host_players) < 2:
+            raise HTTPException(400, "Need at least 2 players (excluding host) to start in Party Mode.")
+        not_ready = [p.name for p in non_host_players if not p.is_ready]
+        if not_ready:
+            raise HTTPException(400, f"Players not ready: {', '.join(not_ready)}")
+        total_photos = sum(len(p.selected_photos) for p in non_host_players)
+    else:
+        if len(game.players) < 2:
+            raise HTTPException(400, "Need at least 2 players to start.")
+        not_ready = [p.name for p in game.players.values() if not p.is_ready]
+        if not_ready:
+            raise HTTPException(400, f"Players not ready: {', '.join(not_ready)}")
+        total_photos = sum(len(p.selected_photos) for p in game.players.values())
 
-    total_photos = sum(len(p.selected_photos) for p in game.players.values())
     if total_photos < game.settings.rounds:
         raise HTTPException(
             400,

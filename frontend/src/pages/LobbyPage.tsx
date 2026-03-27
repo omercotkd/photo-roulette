@@ -27,6 +27,7 @@ export default function LobbyPage() {
     vote_timer_seconds: state.settings.vote_timer_seconds,
     leaderboard_time_seconds: state.settings.leaderboard_time_seconds,
     videos_allowed: state.settings.videos_allowed,
+    party_mode: state.settings.party_mode,
   });
 
   // Sync settingsForm when settings_updated comes in from server
@@ -36,6 +37,7 @@ export default function LobbyPage() {
       vote_timer_seconds: state.settings.vote_timer_seconds,
       leaderboard_time_seconds: state.settings.leaderboard_time_seconds,
       videos_allowed: state.settings.videos_allowed,
+      party_mode: state.settings.party_mode,
     });
   }, [state.settings]);
 
@@ -61,7 +63,10 @@ export default function LobbyPage() {
   }, [state.wasKicked, navigate]);
 
   const isReady = state.players.find((p) => p.player_id === state.myPlayerId)?.is_ready ?? false;
-  const allReady = state.players.length >= 2 && state.players.every((p) => p.is_ready);
+  const isPartyMode = state.settings.party_mode;
+  // In Party Mode the host is a display screen, not a player — exclude them from the player list.
+  const displayPlayers = isPartyMode ? state.players.filter((p) => !p.is_host) : state.players;
+  const allReady = displayPlayers.length >= 2 && displayPlayers.every((p) => p.is_ready);
 
   async function uploadFiles(files: FileList | File[] | null) {
     if (!files || files.length === 0) return;
@@ -245,7 +250,7 @@ export default function LobbyPage() {
           <div className="flex items-center gap-1.5 text-white/70">
             <Users className="w-5 h-5" />
             <div className="text-right">
-              <div className="text-2xl font-extrabold text-white leading-none">{state.players.length}</div>
+              <div className="text-2xl font-extrabold text-white leading-none">{displayPlayers.length}</div>
               <div className="text-xs text-white/50 font-semibold">players</div>
             </div>
           </div>
@@ -265,7 +270,7 @@ export default function LobbyPage() {
         <section>
           <h2 className="text-xs font-extrabold text-white/50 uppercase tracking-widest mb-2">Players</h2>
           <PlayerList
-            players={state.players}
+            players={displayPlayers}
             myPlayerId={state.myPlayerId}
             onKick={state.isHost ? handleKick : undefined}
           />
@@ -328,6 +333,19 @@ export default function LobbyPage() {
                 />
                 <span className="text-sm text-white/80 font-semibold">Allow videos</span>
               </label>
+              <label className="flex items-center gap-2 cursor-pointer col-span-2">
+                <input
+                  type="checkbox"
+                  checked={settingsForm.party_mode}
+                  onChange={(e) => {
+                    setSettingsForm((f) => ({ ...f, party_mode: e.target.checked }));
+                    setTimeout(handleSaveSettings, 50);
+                  }}
+                  className="w-5 h-5 accent-white rounded"
+                />
+                <span className="text-sm text-white/80 font-semibold">Party Mode</span>
+                <span className="text-xs text-white/40 font-medium">(host is display only — players vote on their phones)</span>
+              </label>
             </div>
 
             {allReady && state.players.length >= 2 && (
@@ -346,7 +364,8 @@ export default function LobbyPage() {
           </section>
         )}
 
-        {/* Photo upload section */}
+        {/* Photo upload section — hidden for the host in Party Mode */}
+        {!(isPartyMode && state.isHost) && (
         <section className="rounded-3xl bg-black/20 backdrop-blur-md border border-white/10 p-4 space-y-3">
           <h2 className="font-extrabold text-white flex items-center gap-2">
             <Camera className="w-4 h-4 text-white/60" />
@@ -410,8 +429,10 @@ export default function LobbyPage() {
             onChange={(e) => handleFolderChange(e.target.files)}
           />
         </section>
+        )}
 
-        {/* Ready button */}
+        {/* Ready button — hidden for the host in Party Mode */}
+        {!(isPartyMode && state.isHost) && (
         <button
           onClick={handleReadyToggle}
           disabled={state.mySelectedPhotos.length === 0}
@@ -423,6 +444,7 @@ export default function LobbyPage() {
         >
           {isReady ? '⏸ Unready' : '✓ Ready'}
         </button>
+        )}
 
         {!state.isHost && allReady && (
           <p className="text-center text-sm text-gray-400">All players ready — waiting for host to start…</p>

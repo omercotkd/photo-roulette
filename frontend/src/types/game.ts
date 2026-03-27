@@ -14,6 +14,7 @@ export interface GameSettings {
   vote_timer_seconds: number;
   leaderboard_time_seconds: number;
   videos_allowed: boolean;
+  party_mode: boolean;
 }
 
 export interface PlayerInfo {

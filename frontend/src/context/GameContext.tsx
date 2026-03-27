@@ -67,6 +67,7 @@ const defaultSettings: GameSettings = {
   vote_timer_seconds: 15,
   leaderboard_time_seconds: 10,
   videos_allowed: true,
+  party_mode: false,
 };
 
 const initialState: GameState = {
@@ -195,7 +196,9 @@ function reducer(state: GameState, action: Action): GameState {
         status: 'IN_ROUND',
         currentRound: action.data,
         votesCast: 0,
-        totalPlayers: state.players.length,
+        totalPlayers: state.settings.party_mode
+          ? state.players.filter((p) => !p.is_host).length
+          : state.players.length,
         myVote: null,
         roundEndData: null,
         leaderboardStartedAtMs: null,

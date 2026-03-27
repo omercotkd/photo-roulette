@@ -15,6 +15,7 @@ class UpdateSettingsRequest(BaseModel):
     vote_timer_seconds: int | None = Field(None, ge=5, le=60)
     leaderboard_time_seconds: int | None = Field(None, ge=3, le=30)
     videos_allowed: bool | None = None
+    party_mode: bool | None = None
 
 
 class PlayerResponse(BaseModel):

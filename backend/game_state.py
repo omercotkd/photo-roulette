@@ -44,6 +44,7 @@ class GameSettings:
     vote_timer_seconds: int = 15
     leaderboard_time_seconds: int = 10
     videos_allowed: bool = True
+    party_mode: bool = False
 
 
 @dataclass
