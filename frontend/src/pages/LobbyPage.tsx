@@ -167,7 +167,7 @@ export default function LobbyPage() {
     socket?.emit('set_ready', { ready: !isReady });
   }
 
-  async function handleSaveSettings() {
+  async function handleSaveSettings(formData = settingsForm) {
     try {
       await fetch(`${API}/games/${code}/settings`, {
         method: 'PATCH',
@@ -175,7 +175,7 @@ export default function LobbyPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${state.myToken}`,
         },
-        body: JSON.stringify(settingsForm),
+        body: JSON.stringify(formData),
       });
     } catch {
       // ignore
@@ -293,7 +293,7 @@ export default function LobbyPage() {
                   max={100}
                   value={settingsForm.rounds}
                   onChange={(e) => setSettingsForm((f) => ({ ...f, rounds: Number(e.target.value) }))}
-                  onBlur={handleSaveSettings}
+                  onBlur={() => handleSaveSettings()}
                   className="mt-1 w-full bg-white/10 border border-white/15 text-white rounded-xl px-3 py-2 font-semibold focus:outline-none focus:ring-2 focus:ring-white/25"
                 />
               </label>
@@ -305,7 +305,7 @@ export default function LobbyPage() {
                   max={60}
                   value={settingsForm.vote_timer_seconds}
                   onChange={(e) => setSettingsForm((f) => ({ ...f, vote_timer_seconds: Number(e.target.value) }))}
-                  onBlur={handleSaveSettings}
+                  onBlur={() => handleSaveSettings()}
                   className="mt-1 w-full bg-white/10 border border-white/15 text-white rounded-xl px-3 py-2 font-semibold focus:outline-none focus:ring-2 focus:ring-white/25"
                 />
               </label>
@@ -317,7 +317,7 @@ export default function LobbyPage() {
                   max={30}
                   value={settingsForm.leaderboard_time_seconds}
                   onChange={(e) => setSettingsForm((f) => ({ ...f, leaderboard_time_seconds: Number(e.target.value) }))}
-                  onBlur={handleSaveSettings}
+                  onBlur={() => handleSaveSettings()}
                   className="mt-1 w-full bg-white/10 border border-white/15 text-white rounded-xl px-3 py-2 font-semibold focus:outline-none focus:ring-2 focus:ring-white/25"
                 />
               </label>
@@ -326,8 +326,9 @@ export default function LobbyPage() {
                   type="checkbox"
                   checked={settingsForm.videos_allowed}
                   onChange={(e) => {
-                    setSettingsForm((f) => ({ ...f, videos_allowed: e.target.checked }));
-                    setTimeout(handleSaveSettings, 50);
+                    const updated = { ...settingsForm, videos_allowed: e.target.checked };
+                    setSettingsForm(updated);
+                    handleSaveSettings(updated);
                   }}
                   className="w-5 h-5 accent-white rounded"
                 />
@@ -338,8 +339,9 @@ export default function LobbyPage() {
                   type="checkbox"
                   checked={settingsForm.party_mode}
                   onChange={(e) => {
-                    setSettingsForm((f) => ({ ...f, party_mode: e.target.checked }));
-                    setTimeout(handleSaveSettings, 50);
+                    const updated = { ...settingsForm, party_mode: e.target.checked };
+                    setSettingsForm(updated);
+                    handleSaveSettings(updated);
                   }}
                   className="w-5 h-5 accent-white rounded"
                 />
